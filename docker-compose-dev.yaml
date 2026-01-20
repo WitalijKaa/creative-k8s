@@ -95,11 +95,11 @@ services:
         condition: service_healthy
       sc_redis:
         condition: service_healthy
-    command: ["sh", "-lc", "while true; do php artisan schedule:run --verbose --no-interaction || true; sleep 60; done"]
+    command: ["php", "artisan", "schedule:work"]
     restart: unless-stopped
 
   sc_llm:
-    image: special-c/sc_llm:prod
+    image: special-c/sc_llm:main
     # container_name: sc_llm
     build:
       context: ./llm

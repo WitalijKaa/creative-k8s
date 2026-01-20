@@ -13,6 +13,8 @@ services:
         condition: service_healthy
       sc_redis:
         condition: service_healthy
+    networks:
+      - isolated
 
   sc_nginx:
     image: special-c/sc_nginx:prod
@@ -23,6 +25,9 @@ services:
       - "80:80"
     depends_on:
       - sc_php
+    networks:
+      - public
+      - isolated
 
   sc_mysql:
     image: mysql:8.4.4
@@ -44,6 +49,8 @@ services:
       start_period: 80s
     volumes:
       - sc_db_mysql:/var/lib/mysql
+    networks:
+      - isolated
 
   sc_redis:
     image: redis:7.4.1-alpine
@@ -55,6 +62,8 @@ services:
       start_period: 42s
     volumes:
       - sc_cache_redis:/data
+    networks:
+      - isolated
 
   sc_scheduler:
     image: special-c/sc_scheduler:prod
@@ -72,8 +81,16 @@ services:
         condition: service_healthy
       sc_redis:
         condition: service_healthy
-    command: ["sh", "-lc", "while true; do php artisan schedule:run --verbose --no-interaction || true; sleep 60; done"]
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep '[p]hp artisan schedule:work'"]
+      interval: 22s
+      timeout: 11s
+      retries: 7
+      start_period: 42s
     restart: unless-stopped
+    networks:
+      - isolated
 
   sc_llm:
     image: special-c/sc_llm:prod
@@ -109,9 +126,19 @@ services:
       HF_HOME: /hugging_face_cache
       HF_TOKEN: ${HF_TOKEN}
       OA_TOKEN: ${OA_TOKEN}
+    networks:
+      - public
+      - isolated
 
 volumes:
   sc_db_mysql:
   sc_cache_redis:
   sc_hugging_face:
     name: cs_hugging_face_cache
+
+networks:
+  public:
+    driver: bridge
+  isolated:
+    driver: bridge
+    internal: true

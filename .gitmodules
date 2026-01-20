@@ -1,0 +1,6 @@
+[submodule "php-world"]
+	path = php-world
+	url = git@github.com:WitalijKaa/special-creativity.git
+[submodule "llm"]
+	path = llm
+	url = git@github.com:WitalijKaa/special-creativity-ai.git

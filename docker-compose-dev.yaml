@@ -98,6 +98,46 @@ services:
     command: ["sh", "-lc", "while true; do php artisan schedule:run --verbose --no-interaction || true; sleep 60; done"]
     restart: unless-stopped
 
+  sc_llm:
+    image: special-c/sc_llm:prod
+    # container_name: sc_llm
+    build:
+      context: ./llm
+      dockerfile: docker/Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
+        TZ: ${TZ}
+    ports:
+      - "22111:8000"
+    volumes:
+      - ./llm/src:/app/src:delegated
+      - ./llm/main.py:/app/main.py:delegated
+      - ./llm/config.py:/app/config.py:delegated
+      - sc_hugging_face:/hugging_face_cache
+    depends_on:
+      sc_php:
+        condition: service_started
+      sc_mysql:
+        condition: service_healthy
+      sc_redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "--version"]
+      interval: 31s
+      timeout: 8s
+      retries: 4
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      HF_HOME: /hugging_face_cache
+      HF_TOKEN: ${HF_TOKEN}
+      OA_TOKEN: ${OA_TOKEN}
+
 volumes:
   sc_db_mysql_volume:
     name: sc_dev_db_mysql
@@ -107,3 +147,5 @@ volumes:
     name: sc_dev_bootstrap
   sc_php_bootstrap_cache_volume_scheduler:
     name: sc_dev_bootstrap_scheduler
+  sc_hugging_face:
+    name: cs_hugging_face_cache

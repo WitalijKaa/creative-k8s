@@ -69,7 +69,7 @@ docker compose -f docker-compose-dev.yaml -p sc13 exec -u www-data sc_php php ar
 ## check yaml
 
 ```
-docker compose -f docker-compose-dev.yaml -p sc13 -f docker/docker-compose-dev.yaml config
+docker compose -f docker-compose-dev.yaml -p sc13 -f docker-compose-dev.yaml config
 ```
 
 #### artisan stub for docker

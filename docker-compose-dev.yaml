@@ -138,7 +138,128 @@ services:
       HF_TOKEN: ${HF_TOKEN}
       OA_TOKEN: ${OA_TOKEN}
 
+  sc_kafka_ctl_alpha:
+    image: special-c/sc_kafka:main
+    build:
+      context: ./kafka
+    restart: unless-stopped
+    environment:
+      - KAFKA_CLUSTER_ID=${KAFKA_CID}
+    volumes:
+      - sc_kafka_ctl_volume_a:/var/lib/kafka/data
+      - ./kafka/ctl-alpha.props:/etc/kafka/server.properties:ro
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    command: ["/etc/kafka/server.properties"]
+
+  sc_kafka_ctl_betta:
+    image: special-c/sc_kafka:main
+    build:
+      context: ./kafka
+    restart: unless-stopped
+    environment:
+      - KAFKA_CLUSTER_ID=${KAFKA_CID}
+    volumes:
+      - sc_kafka_ctl_volume_b:/var/lib/kafka/data
+      - ./kafka/ctl-betta.props:/etc/kafka/server.properties:ro
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    command: ["/etc/kafka/server.properties"]
+
+  sc_kafka_broker_a:
+    image: special-c/sc_kafka:main
+    build:
+      context: ./kafka
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 22s
+      timeout: 13s
+      retries: 8
+      start_period: 33s
+    ports:
+      - "29092:29092"
+    environment:
+      - KAFKA_CLUSTER_ID=${KAFKA_CID}
+    volumes:
+      - sc_kafka_broker_volume_a:/var/lib/kafka/data
+      - ./kafka/broker-a.props:/etc/kafka/server.properties:ro
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    command: ["/etc/kafka/server.properties"]
+
+  sc_kafka_broker_b:
+    image: special-c/sc_kafka:main
+    build:
+      context: ./kafka
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 22s
+      timeout: 13s
+      retries: 8
+      start_period: 33s
+    environment:
+      - KAFKA_CLUSTER_ID=${KAFKA_CID}
+    volumes:
+      - sc_kafka_broker_volume_b:/var/lib/kafka/data
+      - ./kafka/broker-b.props:/etc/kafka/server.properties:ro
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    command: ["/etc/kafka/server.properties"]
+
+  sc_kafka_broker_c:
+    image: special-c/sc_kafka:main
+    build:
+      context: ./kafka
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 22s
+      timeout: 13s
+      retries: 8
+      start_period: 33s
+    environment:
+      - KAFKA_CLUSTER_ID=${KAFKA_CID}
+    volumes:
+      - sc_kafka_broker_volume_c:/var/lib/kafka/data
+      - ./kafka/broker-c.props:/etc/kafka/server.properties:ro
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    command: ["/etc/kafka/server.properties"]
+
+  sc_kafka_ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    restart: unless-stopped
+    depends_on:
+      sc_kafka_broker_a:
+        condition: service_healthy
+      sc_kafka_broker_b:
+        condition: service_healthy
+      sc_kafka_broker_c:
+        condition: service_healthy
+    ports:
+      - "22081:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=sc_kafka_broker_a:9092,sc_kafka_broker_b:9092,sc_kafka_broker_c:9092
+
 volumes:
+  sc_kafka_ctl_volume_a:
+    name: sc_dev_kafka_ctl_a
+  sc_kafka_ctl_volume_b:
+    name: sc_dev_kafka_ctl_b
+  sc_kafka_broker_volume_a:
+    name: sc_dev_kafka_broker_a
+  sc_kafka_broker_volume_b:
+    name: sc_dev_kafka_broker_b
+  sc_kafka_broker_volume_c:
+    name: sc_dev_kafka_broker_c
   sc_db_mysql_volume:
     name: sc_dev_db_mysql
   sc_cache_redis_volume:

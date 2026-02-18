@@ -87,7 +87,6 @@ services:
       - ./php-world/database:/app/database:delegated
       - ./php-world/public:/app/public:delegated
       - ./php-world/routes:/app/routes:delegated
-      - ./php-world/tests:/app/tests:delegated
     depends_on:
       sc_php:
         condition: service_started
@@ -96,6 +95,33 @@ services:
       sc_redis:
         condition: service_healthy
     command: ["php", "artisan", "schedule:work"]
+    restart: unless-stopped
+
+  sc_kafka_consumer:
+    image: special-c/sc_kafka_consumer:main
+    build:
+      context: ./php-world
+      dockerfile: docker/Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
+    env_file:
+      - .env
+    volumes:
+      - ./php-world/app:/app/app:delegated
+      - ./php-world/bootstrap:/app/bootstrap:delegated
+      - sc_php_bootstrap_cache_volume_kafka_consumer:/app/bootstrap/cache
+      - ./php-world/config:/app/config:delegated
+      - ./php-world/database:/app/database:delegated
+      - ./php-world/public:/app/public:delegated
+      - ./php-world/routes:/app/routes:delegated
+    depends_on:
+      sc_kafka_broker_a:
+        condition: service_healthy
+      sc_kafka_broker_b:
+        condition: service_healthy
+      sc_kafka_broker_c:
+        condition: service_healthy
+    command: ["php", "artisan", "kafka:consume"]
     restart: unless-stopped
 
   sc_llm:
@@ -268,5 +294,7 @@ volumes:
     name: sc_dev_bootstrap
   sc_php_bootstrap_cache_volume_scheduler:
     name: sc_dev_bootstrap_scheduler
+  sc_php_bootstrap_cache_volume_kafka_consumer:
+    name: sc_dev_bootstrap_kafka_consumer
   sc_hugging_face:
     name: cs_hugging_face_cache

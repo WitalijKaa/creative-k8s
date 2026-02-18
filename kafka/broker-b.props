@@ -1,6 +1,8 @@
 process.roles=broker
 node.id=4
 
+auto.create.topics.enable=true
+
 controller.quorum.voters=1@sc_kafka_ctl_alpha:9093,2@sc_kafka_ctl_betta:9093
 controller.listener.names=CONTROLLER_LIS
 
